@@ -3,6 +3,7 @@ const cors = require('cors'); // Import CORS
 const setupSwagger = require('./swagger');
 const userRoutes = require('./routes/users');
 const tagRoutes = require('./routes/tags');
+const questionRoutes = require('./routes/questions');
 const loginRoutes = require('./routes/login');
 const app = express();
 const port = process.env.PORT || 9090;
@@ -18,6 +19,8 @@ setupSwagger(app);
 app.use('/api/', userRoutes);
 app.use('/api/', tagRoutes);
 app.use('/api/', loginRoutes);
+app.use('/api', questionRoutes);
+
 
 // Start the server
 app.listen(port, () => {
