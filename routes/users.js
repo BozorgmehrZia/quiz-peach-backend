@@ -69,7 +69,7 @@ router.use(
  */
 router.get('/', async (req, res) => {
     try {
-        const { name, sort = 'desc' } = req.query;
+        const { name } = req.query;
 
         const currentUserId = req.session.userId;
 
@@ -94,7 +94,21 @@ router.get('/', async (req, res) => {
         });
 
         // Combine current user and other users
-        const result = [currentUser, ...otherUsers];
+        const allUsers = [currentUser, ...otherUsers];
+
+        // Calculate rank for each user
+        let rank = 1;
+        const result = allUsers.map((user, index) => {
+            const userWithRank = { ...user.toJSON(), rank };
+
+            // If the next user has the same score, keep the same rank
+            if (index > 0 && user.score !== allUsers[index - 1].score) {
+                rank = index + 1;
+            }
+
+            return userWithRank;
+        });
+
         res.status(200).json(result);
 
     } catch (error) {
