@@ -40,15 +40,19 @@ const Question = sequelize.define('Question', {
         type: DataTypes.TEXT,
         allowNull: false,
     },
+    correct_option: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
     level: {
         type: DataTypes.TEXT,
         allowNull: false,
     },
-    answerCount: {
+    answer_count: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
     },
-    correctAnswerCount: {
+    correct_answer_count: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
     },
