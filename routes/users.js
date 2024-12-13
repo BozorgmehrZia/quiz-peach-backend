@@ -1,4 +1,5 @@
 const express = require('express');
+const { Op } = require('sequelize');
 const { User } = require('../models');
 
 const router = express.Router();
@@ -7,8 +8,28 @@ const router = express.Router();
  * @swagger
  * /api/user:
  *   get:
- *     summary: Retrieve a list of users
- *     description: Retrieve all users along with their created questions.
+ *     summary: Retrieve a list of users for scoreboard
+ *     description: Retrieve users with the current user at the top and other users sorted by score and optional name filter.
+ *     parameters:
+ *       - in: query
+ *         name: currentUserId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID of the current user making the request.
+ *       - in: query
+ *         name: name
+ *         schema:
+ *           type: string
+ *         required: false
+ *         description: Filter users by name (case-insensitive, partial match).
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         required: false
+ *         description: Sort users by score in ascending (asc) or descending (desc) order. Default is desc.
  *     responses:
  *       200:
  *         description: A list of users.
@@ -23,54 +44,55 @@ const router = express.Router();
  *                     type: integer
  *                   name:
  *                     type: string
- *                   email:
- *                     type: string
  *                   score:
  *                     type: integer
- *       500:
- *         description: Server error
- */
-router.get('/', async (req, res) => {
-    try {
-        const users = await User.findAll();
-        res.json(users);
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ error: 'Failed to fetch users' });
-    }
-});
-
-/**
- * @swagger
- * /api/user:
- *   post:
- *     summary: Create a new user
- *     description: Add a new user to the database.
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               password:
- *                 type: string
- *     responses:
- *       201:
- *         description: User created successfully.
  *       400:
  *         description: Validation error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Server error.
  */
-router.post('/', async (req, res) => {
+router.get('/users', async (req, res) => {
     try {
-        const user = await User.create(req.body);
-        res.status(201).json(user);
+        const { currentUserId, name, sort = 'desc' } = req.query;
+
+        // Validate the required parameter
+        if (!currentUserId) {
+            return res.status(400).json({ error: 'currentUserId is required.' });
+        }
+
+        // Fetch the current user
+        const currentUser = await User.findByPk(currentUserId);
+        if (!currentUser) {
+            return res.status(400).json({ error: 'Current user not found.' });
+        }
+
+        // Build query filters for other users
+        const where = name
+            ? {
+                  id: { [Op.ne]: currentUserId }, // Exclude the current user
+                  name: { [Op.like]: `%${name}%` }, // Case-insensitive partial match
+              }
+            : { id: { [Op.ne]: currentUserId } }; // Exclude the current user
+
+        // Fetch other users sorted by score
+        const otherUsers = await User.findAll({
+            where,
+            order: [['score', sortOrder]],
+        });
+
+        // Combine current user and other users
+        const result = [currentUser, ...otherUsers];
+        res.status(200).json(result);
+
     } catch (error) {
-        res.status(400).json({ error: 'Failed to create user' });
+        res.status(500).json({ error: 'Failed to fetch users' });
     }
 });
 
