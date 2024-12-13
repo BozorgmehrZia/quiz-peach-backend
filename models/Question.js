@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
 const User = require('./User');
+const Tag = require('./Tag');
 
 const Question = sequelize.define('Question', {
     id: {
@@ -56,6 +57,14 @@ const Question = sequelize.define('Question', {
         type: DataTypes.INTEGER,
         defaultValue: 0,
     },
+    tag_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: Tag,
+            key: 'id',
+        },
+    }
 }, {
     timestamps: false,
 });

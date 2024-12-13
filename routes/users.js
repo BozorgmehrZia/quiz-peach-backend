@@ -12,12 +12,6 @@ const router = express.Router();
  *     description: Retrieve users with the current user at the top and other users sorted by score and optional name filter.
  *     parameters:
  *       - in: query
- *         name: currentUserId
- *         schema:
- *           type: integer
- *         required: true
- *         description: ID of the current user making the request.
- *       - in: query
  *         name: name
  *         schema:
  *           type: string
@@ -60,12 +54,9 @@ const router = express.Router();
  */
 router.get('/users', async (req, res) => {
     try {
-        const { currentUserId, name, sort = 'desc' } = req.query;
+        const { name, sort = 'desc' } = req.query;
 
-        // Validate the required parameter
-        if (!currentUserId) {
-            return res.status(400).json({ error: 'currentUserId is required.' });
-        }
+        const currentUserId = req.session.userId;
 
         // Fetch the current user
         const currentUser = await User.findByPk(currentUserId);

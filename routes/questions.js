@@ -1,6 +1,6 @@
 const express = require('express');
 const { Op } = require('sequelize');
-const { Question } = require('../models');
+const { Question, RelatedQuestion } = require('../models');
 
 const router = express.Router();
 
@@ -19,23 +19,35 @@ const router = express.Router();
  *             properties:
  *               name:
  *                 type: string
- *                 example: Tag1
+ *               question:
+ *                 type: string
+ *               option1:
+ *                 type: string
+ *               option2:
+ *                 type: string
+ *               option3:
+ *                 type: string
+ *               option4:
+ *                 type: string
+ *               correct_option:
+ *                 type: integer
+ *               level:
+ *                 type: string
+ *               related_ids:
+ *                 type: array
  *     responses:
  *       201:
- *         description: Tag created successfully.
+ *         description: Question created successfully.
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               properties:
- *                 id:
- *                   type: integer
- *                 name:
+ *  *            properties:
+ *                 message:
  *                   type: string
- *                 question_number:
- *                   type: integer
+
  *       400:
- *         description: Validation or duplication error.
+ *         description: Validation error.
  *         content:
  *           application/json:
  *             schema:
@@ -47,25 +59,71 @@ const router = express.Router();
  *         description: Server error.
  */
 router.post('/', async (req, res) => {
+    const {
+        name,
+        question,
+        option1,
+        option2,
+        option3,
+        option4,
+        correct_option,
+        level,
+        related_ids,
+    } = req.body;
+    const currentUserId = req.session.userId;
+
     try {
-        const { name } = req.body;
-
         // Validate the request body
-        if (!name || typeof name !== 'string') {
-            return res.status(400).json({ error: 'Name is required and must be a string.' });
+        if (
+            !name ||
+            !question ||
+            !option1 ||
+            !option2 ||
+            !option3 ||
+            !option4 ||
+            !correct_option ||
+            !level
+        ) {
+            return res.status(400).json({ error: 'All required fields must be provided.' });
         }
 
-        // Check if the tag already exists
-        const existingTag = await Tag.findOne({ where: { name } });
-        if (existingTag) {
-            return res.status(400).json({ error: 'Tag already exists.' });
+        // Validate the correct_option value
+        if (![1, 2, 3, 4].includes(correct_option)) {
+            return res
+                .status(400)
+                .json({ error: 'Correct option must be an integer between 1 and 4.' });
         }
 
-        // Create the new tag
-        const tag = await Tag.create({ name });
-        res.status(201).json(tag);
+        // Create the new question
+        const newQuestion = await Question.create({
+            creator_id: currentUserId,
+            name: name,
+            question: question,
+            option1: option1,
+            option2: option2,
+            option3: option3,
+            option4: option4,
+            correct_option: correct_option,
+            level: level,
+        });
+
+        // Handle related questions if provided
+        if (related_ids && Array.isArray(related_ids)) {
+            const relatedQuestionPromises = related_ids.map((relatedId) =>
+                RelatedQuestion.create({
+                    question_id: newQuestion.id,
+                    related_id: relatedId,
+                })
+            );
+            await Promise.all(relatedQuestionPromises);
+        }
+
+        res.status(201).json({
+            message: 'Question created successfully.',
+        });
     } catch (error) {
-        res.status(500).json({ error: 'Failed to create tag' });
+        console.error('Error creating question:', error);
+        res.status(500).json({ error: 'Failed to create question.' });
     }
 });
 
