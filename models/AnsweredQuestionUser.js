@@ -22,8 +22,8 @@ const AnsweredQuestionUser = sequelize.define('AnsweredQuestionUser', {
     },
     answered_status: {
         type: DataTypes.ENUM,
-        values: ['صحیح حل شده', 'غلط حل شده', 'حل نشده'], // Three possible options
-        defaultValue: 'حل نشده', // Default to "Not answered"
+        allowNull: false,
+        values: ['صحیح حل شده', 'غلط حل شده'],
     },
 }, {
     timestamps: false,
