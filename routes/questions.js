@@ -193,11 +193,12 @@ router.post('/', async (req, res) => {
  *         description: Server error.
  */
 router.post('/answer', async (req, res) => {
-    const { user_id, question_id, option } = req.body;
+    const { question_id, option } = req.body;
+    const user_id = req.session.userId;
 
     try {
         // Validate request body
-        if (!user_id || !question_id || !option) {
+        if (!question_id || !option) {
             return res.status(400).json({ error: 'user_id, question_id, and option are required.' });
         }
 
@@ -219,6 +220,7 @@ router.post('/answer', async (req, res) => {
 
         // Check if the answer is correct
         const isCorrect = question.correct_option === option;
+        const answeredStatus = isCorrect ? 'صحیح حل شده' : 'غلط حل شده';
 
         // Update question statistics
         await question.increment('answer_count');
@@ -226,17 +228,23 @@ router.post('/answer', async (req, res) => {
             await question.increment('correct_answer_count');
         }
 
-        // Record the user's answer
-        const [record, created] = await AnsweredQuestionUser.findOrCreate({
+        // Check if the question has already been answered by the user
+        const existingRecord = await AnsweredQuestionUser.findOne({
             where: { user_id, question_id },
-            defaults: { user_id, question_id },
         });
 
-        if (!created) {
-            return res
-                .status(400)
-                .json({ error: 'This question has already been answered by the user.' });
+        if (existingRecord) {
+            return res.status(400).json({
+                error: 'This question has already been answered by the user.',
+            });
         }
+
+        // Record the user's answer
+        await AnsweredQuestionUser.create({
+            user_id: user_id,
+            question_id: question_id,
+            answered_status: answeredStatus,
+        });
 
         // Update user score if correct
         if (isCorrect) {
