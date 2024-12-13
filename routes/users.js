@@ -1,8 +1,21 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { User } = require('../models');
+const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 
 const router = express.Router();
+
+// Set up session middleware
+router.use(
+    session({
+        store: new SQLiteStore({ db: 'db/sessions.sqlite' }),
+        secret: 'your-secret-key',
+        resave: false,
+        saveUninitialized: false,
+        cookie: { secure: false },
+    })
+);
 
 /**
  * @swagger
@@ -10,6 +23,8 @@ const router = express.Router();
  *   get:
  *     summary: Retrieve a list of users for scoreboard
  *     description: Retrieve users with the current user at the top and other users sorted by score and optional name filter.
+ *     tags:
+ *       - Users
  *     parameters:
  *       - in: query
  *         name: name
@@ -52,7 +67,7 @@ const router = express.Router();
  *       500:
  *         description: Server error.
  */
-router.get('/users', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const { name, sort = 'desc' } = req.query;
 
@@ -89,10 +104,12 @@ router.get('/users', async (req, res) => {
 
 /**
  * @swagger
- * /api/register:
+ * /api/user:
  *   post:
  *     summary: Register a new user
  *     description: Create a new user with a unique name and email.
+ *     tags:
+ *       - Users
  *     requestBody:
  *       required: true
  *       content:
@@ -157,7 +174,7 @@ router.get('/users', async (req, res) => {
  *                   type: string
  *                   example: Failed to register user.
  */
-router.post('/register', async (req, res) => {
+router.post('/', async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
@@ -196,5 +213,123 @@ router.post('/register', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/user/login:
+ *   post:
+ *     summary: Log in a user
+ *     description: Authenticate a user and start a session.
+ *     tags:
+ *       - Users
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 description: Email of the user.
+ *                 example: johndoe@example.com
+ *               password:
+ *                 type: string
+ *                 description: Password for the user.
+ *                 example: securepassword123
+ *     responses:
+ *       200:
+ *         description: Login successful.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Login successful.
+ *       400:
+ *         description: Validation error or invalid credentials.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Invalid email or password.
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Failed to log in.
+ */
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        // Validate required fields
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password are required.' });
+        }
+
+        // Find the user by email
+        const user = await User.findOne({ where: { email } });
+        if (!user || user.password !== password) {
+            return res.status(400).json({ error: 'Invalid email or password.' });
+        }
+
+        // Store user information in session
+        req.session.userId = user.id;
+        res.status(200).json({ message: 'Login successful.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to log in.' });
+    }
+});
+
+/**
+ * @swagger
+ * /api/user/logout:
+ *   post:
+ *     summary: Log out a user
+ *     description: Destroy the session for the logged-in user.
+ *     tags:
+ *       - Users
+ *     responses:
+ *       200:
+ *         description: Logout successful.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Logout successful.
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Failed to log out.
+ */
+router.post('/logout', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Failed to log out.' });
+        }
+        res.status(200).json({ message: 'Logout successful.' });
+    });
+});
 
 module.exports = router;

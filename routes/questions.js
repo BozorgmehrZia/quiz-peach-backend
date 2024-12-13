@@ -10,6 +10,8 @@ const router = express.Router();
  *   post:
  *     summary: Add a new question
  *     description: Add a new question to the database.
+ *     tags:
+ *       - Questions
  *     requestBody:
  *       required: true
  *       content:
@@ -44,7 +46,7 @@ const router = express.Router();
  *           application/json:
  *             schema:
  *               type: object
- *  *            properties:
+ *               properties:
  *                 message:
  *                   type: string
 
@@ -117,6 +119,8 @@ router.post('/', async (req, res) => {
             tag_id: tag.id
         });
 
+        await tag.increment('question_number');
+
         // Handle related questions if provided
         if (related_ids && Array.isArray(related_ids)) {
             const relatedQuestionPromises = related_ids.map((relatedId) =>
@@ -139,10 +143,12 @@ router.post('/', async (req, res) => {
 
 /**
  * @swagger
- * /api/answer:
+ * /api/question/answer:
  *   post:
  *     summary: Submit an answer for a question
  *     description: Allows a user to answer a question, updates the user's score if the answer is correct, and tracks answered questions.
+ *     tags:
+ *       - Questions
  *     requestBody:
  *       required: true
  *       content:
@@ -263,7 +269,7 @@ router.post('/answer', async (req, res) => {
 
 /**
  * @swagger
- * /api/question-details/{id}:
+ * /api/question/{id}/details:
  *   get:
  *     summary: Get question details
  *     description: Fetch the details of a question by ID.
@@ -274,6 +280,8 @@ router.post('/answer', async (req, res) => {
  *         schema:
  *           type: integer
  *           example: 1
+ *     tags:
+ *       - Questions
  *     responses:
  *       200:
  *         description: Question details fetched successfully.
@@ -318,7 +326,7 @@ router.post('/answer', async (req, res) => {
  *       500:
  *         description: Server error.
  */
-router.get('/question-details/:id', async (req, res) => {
+router.get('/:id/details', async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -337,14 +345,14 @@ router.get('/question-details/:id', async (req, res) => {
     }
 });
 
-
-
 /**
  * @swagger
- * /api/questions:
+ * /api/question:
  *   get:
  *     summary: Get filtered list of questions
  *     description: Fetch a list of questions with optional filters for level and answered status.
+ *     tags:
+ *       - Questions
  *     parameters:
  *       - in: query
  *         name: level
@@ -406,7 +414,7 @@ router.get('/question-details/:id', async (req, res) => {
  *       500:
  *         description: Server error.
  */
-router.get('/questions', async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const { level, answeredStatus } = req.query;
 

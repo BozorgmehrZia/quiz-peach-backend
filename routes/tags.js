@@ -10,6 +10,8 @@ const router = express.Router();
  *   get:
  *     summary: Retrieve a list of tags
  *     description: Retrieve tags filtered by name (optional) and sorted by ID.
+ *     tags:
+ *       - Tags
  *     parameters:
  *       - in: query
  *         name: name
@@ -68,6 +70,8 @@ router.get('/', async (req, res) => {
  *   post:
  *     summary: Add a new tag
  *     description: Add a new tag to the database.
+ *     tags:
+ *       - Tags
  *     requestBody:
  *       required: true
  *       content:

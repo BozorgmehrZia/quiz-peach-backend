@@ -4,7 +4,6 @@ const setupSwagger = require('./swagger');
 const userRoutes = require('./routes/users');
 const tagRoutes = require('./routes/tags');
 const questionRoutes = require('./routes/questions');
-const loginRoutes = require('./routes/login');
 const app = express();
 const port = process.env.PORT || 9090;
 
@@ -16,10 +15,9 @@ app.use(express.json());
 setupSwagger(app);
 
 // Routes
-app.use('/api/', userRoutes);
-app.use('/api/', tagRoutes);
-app.use('/api/', loginRoutes);
-app.use('/api', questionRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/tag', tagRoutes);
+app.use('/api/question', questionRoutes);
 
 
 // Start the server

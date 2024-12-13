@@ -2,7 +2,6 @@ const User = require('./User');
 const Question = require('./Question');
 const Tag = require('./Tag');
 const RelatedQuestion = require('./RelatedQuestion');
-const QuestionTag = require('./QuestionTag');
 const AnsweredQuestionUser = require('./AnsweredQuestionUser');
 
 // Relationships
@@ -22,4 +21,4 @@ Question.belongsToMany(Question, {
 User.belongsToMany(Question, { through: AnsweredQuestionUser, foreignKey: 'user_id' });
 Question.belongsToMany(User, { through: AnsweredQuestionUser, foreignKey: 'question_id' });
 
-module.exports = { User, Question, Tag, RelatedQuestion, QuestionTag, AnsweredQuestionUser };
+module.exports = { User, Question, Tag, RelatedQuestion, AnsweredQuestionUser };
