@@ -1,6 +1,6 @@
 const express = require('express');
 const { Op } = require('sequelize');
-const { Question, RelatedQuestion } = require('../models');
+const { Question, RelatedQuestion, Tag, AnsweredQuestionUser, User } = require('../models');
 
 const router = express.Router();
 
@@ -32,6 +32,8 @@ const router = express.Router();
  *               correct_option:
  *                 type: integer
  *               level:
+ *                 type: string
+ *               tag_name:
  *                 type: string
  *               related_ids:
  *                 type: array
@@ -68,6 +70,7 @@ router.post('/', async (req, res) => {
         option4,
         correct_option,
         level,
+        tag_name,
         related_ids,
     } = req.body;
     const currentUserId = req.session.userId;
@@ -82,7 +85,8 @@ router.post('/', async (req, res) => {
             !option3 ||
             !option4 ||
             !correct_option ||
-            !level
+            !level ||
+            !tag_name
         ) {
             return res.status(400).json({ error: 'All required fields must be provided.' });
         }
@@ -92,6 +96,11 @@ router.post('/', async (req, res) => {
             return res
                 .status(400)
                 .json({ error: 'Correct option must be an integer between 1 and 4.' });
+        }
+
+        const tag = await Tag.findOne({ where: { name: tag_name } });
+        if (!tag) {
+            return res.status(404).json({ error: `Tag with name "${tag_name}" not found.` });
         }
 
         // Create the new question
@@ -105,6 +114,7 @@ router.post('/', async (req, res) => {
             option4: option4,
             correct_option: correct_option,
             level: level,
+            tag_id: tag.id
         });
 
         // Handle related questions if provided
@@ -124,6 +134,122 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('Error creating question:', error);
         res.status(500).json({ error: 'Failed to create question.' });
+    }
+});
+
+/**
+ * @swagger
+ * /api/answer:
+ *   post:
+ *     summary: Submit an answer for a question
+ *     description: Allows a user to answer a question, updates the user's score if the answer is correct, and tracks answered questions.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user_id:
+ *                 type: integer
+ *                 description: ID of the user answering the question
+ *               question_id:
+ *                 type: integer
+ *                 description: ID of the question being answered
+ *               option:
+ *                 type: integer
+ *                 description: The selected answer option (1-4)
+ *     responses:
+ *       200:
+ *         description: Answer submitted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 correct:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *       400:
+ *         description: Validation error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       404:
+ *         description: Question or User not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *       500:
+ *         description: Server error.
+ */
+router.post('/answer', async (req, res) => {
+    const { user_id, question_id, option } = req.body;
+
+    try {
+        // Validate request body
+        if (!user_id || !question_id || !option) {
+            return res.status(400).json({ error: 'user_id, question_id, and option are required.' });
+        }
+
+        if (![1, 2, 3, 4].includes(option)) {
+            return res.status(400).json({ error: 'Option must be an integer between 1 and 4.' });
+        }
+
+        // Find the user
+        const user = await User.findByPk(user_id);
+        if (!user) {
+            return res.status(404).json({ error: `User with ID ${user_id} not found.` });
+        }
+
+        // Find the question
+        const question = await Question.findByPk(question_id);
+        if (!question) {
+            return res.status(404).json({ error: `Question with ID ${question_id} not found.` });
+        }
+
+        // Check if the answer is correct
+        const isCorrect = question.correct_option === option;
+
+        // Update question statistics
+        await question.increment('answer_count');
+        if (isCorrect) {
+            await question.increment('correct_answer_count');
+        }
+
+        // Record the user's answer
+        const [record, created] = await AnsweredQuestionUser.findOrCreate({
+            where: { user_id, question_id },
+            defaults: { user_id, question_id },
+        });
+
+        if (!created) {
+            return res
+                .status(400)
+                .json({ error: 'This question has already been answered by the user.' });
+        }
+
+        // Update user score if correct
+        if (isCorrect) {
+            await user.increment('score');
+        }
+
+        res.status(200).json({
+            correct: isCorrect,
+            message: isCorrect ? 'Correct answer!' : 'Incorrect answer.',
+        });
+    } catch (error) {
+        console.error('Error submitting answer:', error);
+        res.status(500).json({ error: 'Failed to submit answer.' });
     }
 });
 
