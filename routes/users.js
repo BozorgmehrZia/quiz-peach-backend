@@ -96,6 +96,76 @@ router.get('/users', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/register:
+ *   post:
+ *     summary: Register a new user
+ *     description: Create a new user with a unique name and email.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Unique name of the user.
+ *                 example: johndoe
+ *               email:
+ *                 type: string
+ *                 description: Unique email of the user.
+ *                 example: johndoe@example.com
+ *               password:
+ *                 type: string
+ *                 description: Password for the user.
+ *                 example: securepassword123
+ *     responses:
+ *       201:
+ *         description: User successfully registered.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   description: ID of the newly created user.
+ *                   example: 1
+ *                 name:
+ *                   type: string
+ *                   description: Name of the newly created user.
+ *                   example: johndoe
+ *                 email:
+ *                   type: string
+ *                   description: Email of the newly created user.
+ *                   example: johndoe@example.com
+ *                 score:
+ *                   type: integer
+ *                   description: Initial score of the user.
+ *                   example: 0
+ *       400:
+ *         description: Validation error or user already exists.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: A user with this name or email already exists.
+ *       500:
+ *         description: Server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Failed to register user.
+ */
 router.post('/register', async (req, res) => {
     try {
         const { name, email, password } = req.body;
