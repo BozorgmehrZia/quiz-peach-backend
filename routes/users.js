@@ -96,4 +96,44 @@ router.get('/users', async (req, res) => {
     }
 });
 
+router.post('/register', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+
+        // Validate required fields
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email, and password are required.' });
+        }
+
+        // Check if a user with the same email or name already exists
+        const existingUser = await User.findOne({
+            where: {
+                [Op.or]: [
+                    { name: name },
+                    { email: email },
+                ],
+            },
+        });
+
+        if (existingUser) {
+            return res.status(400).json({ error: 'A user with this name or email already exists.' });
+        }
+
+        // Create a new user
+        const newUser = await User.create({
+            name,
+            email,
+            password, // In production, make sure to hash the password before storing it
+        });
+
+        // Return the created user (excluding the password for security reasons)
+        const { id, score } = newUser;
+        res.status(201).json({ id, name, email, score });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to register user.' });
+    }
+});
+
+
 module.exports = router;
