@@ -11,6 +11,10 @@ const Tag = sequelize.define('Tag', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    question_number: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0
+    }
 }, {
     timestamps: false,
 });
