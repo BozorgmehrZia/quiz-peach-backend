@@ -46,8 +46,9 @@ const Question = sequelize.define('Question', {
         allowNull: false,
     },
     level: {
-        type: DataTypes.TEXT,
-        allowNull: false,
+        type: DataTypes.ENUM,
+        values: ['متوسط', 'دشوار', 'ساده'],
+        defaultValue: 'ساده',
     },
     answer_count: {
         type: DataTypes.INTEGER,
