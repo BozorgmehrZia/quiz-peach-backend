@@ -1,21 +1,11 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { User } = require('../models');
-const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
+const bcrypt = require('bcrypt');
+const authenticateUser = require('../middleware');
 
 const router = express.Router();
 
-// Set up session middleware
-router.use(
-    session({
-        store: new SQLiteStore({ db: 'db/sessions.sqlite' }),
-        secret: 'your-secret-key',
-        resave: false,
-        saveUninitialized: false,
-        cookie: { secure: false },
-    })
-);
 
 /**
  * @swagger
@@ -67,11 +57,11 @@ router.use(
  *       500:
  *         description: Server error.
  */
-router.get('/', async (req, res) => {
+router.get('/', authenticateUser, async (req, res) => {
     try {
         const { name } = req.query;
 
-        const currentUserId = req.session.userId;
+        const currentUserId = req.userId;
 
         // Fetch the current user
         const currentUser = await User.findByPk(currentUserId);
@@ -211,11 +201,15 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'A user with this name or email already exists.' });
         }
 
+        // Hash the password
+        const saltRounds = 10; // The cost factor for hashing
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        
         // Create a new user
         const newUser = await User.create({
-            name,
-            email,
-            password, // In production, make sure to hash the password before storing it
+            name: name,
+            email: email,
+            password: hashedPassword,
         });
 
         // Return the created user (excluding the password for security reasons)
@@ -293,8 +287,15 @@ router.post('/login', async (req, res) => {
 
         // Find the user by email
         const user = await User.findOne({ where: { email } });
-        if (!user || user.password !== password) {
-            return res.status(400).json({ error: 'Invalid email or password.' });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+
+        // Compare provided password with the stored hashed password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: 'Invalid password.' });
         }
 
         // Store user information in session
@@ -342,6 +343,7 @@ router.post('/logout', (req, res) => {
             console.error(err);
             return res.status(500).json({ error: 'Failed to log out.' });
         }
+        res.clearCookie('connect.sid'); // Clear the session cookie
         res.status(200).json({ message: 'Logout successful.' });
     });
 });

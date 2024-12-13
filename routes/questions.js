@@ -1,6 +1,7 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { Question, RelatedQuestion, Tag, AnsweredQuestionUser, User } = require('../models');
+const authenticateUser = require('../middleware');
 
 const router = express.Router();
 
@@ -62,7 +63,7 @@ const router = express.Router();
  *       500:
  *         description: Server error.
  */
-router.post('/', async (req, res) => {
+router.post('/', authenticateUser, async (req, res) => {
     const {
         name,
         question,
@@ -75,7 +76,8 @@ router.post('/', async (req, res) => {
         tag_name,
         related_ids,
     } = req.body;
-    const currentUserId = req.session.userId;
+
+    const currentUserId = req.userId;
 
     try {
         // Validate the request body
@@ -198,9 +200,9 @@ router.post('/', async (req, res) => {
  *       500:
  *         description: Server error.
  */
-router.post('/answer', async (req, res) => {
+router.post('/answer', authenticateUser, async (req, res) => {
     const { question_id, option } = req.body;
-    const user_id = req.session.userId;
+    const user_id = req.userId;
 
     try {
         // Validate request body
@@ -326,7 +328,7 @@ router.post('/answer', async (req, res) => {
  *       500:
  *         description: Server error.
  */
-router.get('/:id/details', async (req, res) => {
+router.get('/:id/details', authenticateUser, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -414,7 +416,7 @@ router.get('/:id/details', async (req, res) => {
  *       500:
  *         description: Server error.
  */
-router.get('/', async (req, res) => {
+router.get('/', authenticateUser, async (req, res) => {
     try {
         const { level, answeredStatus } = req.query;
 

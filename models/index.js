@@ -21,4 +21,10 @@ Question.belongsToMany(Question, {
 User.belongsToMany(Question, { through: AnsweredQuestionUser, foreignKey: 'user_id' });
 Question.belongsToMany(User, { through: AnsweredQuestionUser, foreignKey: 'question_id' });
 
+Question.hasMany(AnsweredQuestionUser, { foreignKey: 'question_id' });
+AnsweredQuestionUser.belongsTo(Question, { foreignKey: 'question_id' });
+
+User.hasMany(AnsweredQuestionUser, { foreignKey: 'user_id' });
+AnsweredQuestionUser.belongsTo(User, { foreignKey: 'user_id' });
+
 module.exports = { User, Question, Tag, RelatedQuestion, AnsweredQuestionUser };

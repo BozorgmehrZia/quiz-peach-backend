@@ -1,6 +1,7 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { Tag } = require('../models');
+const authenticateUser = require('../middleware');
 
 const router = express.Router();
 
@@ -45,7 +46,7 @@ const router = express.Router();
  *       500:
  *         description: Server error
  */
-router.get('/', async (req, res) => {
+router.get('/', authenticateUser, async (req, res) => {
     try {
         const { name, sort = 'desc' } = req.query;
 
@@ -108,7 +109,7 @@ router.get('/', async (req, res) => {
  *       500:
  *         description: Server error.
  */
-router.post('/', async (req, res) => {
+router.post('/', authenticateUser, async (req, res) => {
     try {
         const { name } = req.body;
 
