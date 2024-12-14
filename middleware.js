@@ -1,10 +1,10 @@
 const authenticateUser = (req, res, next) => {
-    console.log(req.session);
-    if (!req.session.userId) {
+    const userId = req.cookies.userId; // Read the userId from cookies
+    if (!userId) {
         return res.status(401).json({ error: 'Unauthorized. Please log in.' });
     }
 
-    req.userId = req.session.userId; // Attach the user ID to the request for later use
+    req.userId = userId; // Attach the user ID to the request for later use
     next();
 };
 

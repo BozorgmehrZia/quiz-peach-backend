@@ -298,8 +298,12 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'Invalid password.' });
         }
 
-        // Store user information in session
-        req.session.userId = user.id;
+        res.cookie('userId', user.id, {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'Lax',
+        });
+
         res.status(200).json({ message: 'Login successful.' });
     } catch (error) {
         console.error(error);
@@ -343,7 +347,11 @@ router.post('/logout', (req, res) => {
             console.error(err);
             return res.status(500).json({ error: 'Failed to log out.' });
         }
-        res.clearCookie('connect.sid'); // Clear the session cookie
+        res.clearCookie('userId', {
+            httpOnly: true,
+            secure: false,
+            sameSite: 'Lax',
+        });    
         res.status(200).json({ message: 'Logout successful.' });
     });
 });

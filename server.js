@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors'); // Import CORS
 const setupSwagger = require('./swagger');
+const cookieParser = require('cookie-parser');
 const userRoutes = require('./routes/users');
 const tagRoutes = require('./routes/tags');
 const questionRoutes = require('./routes/questions');
@@ -10,8 +11,12 @@ const app = express();
 const port = process.env.PORT || 9090;
 
 // Middleware to enable CORS
-app.use(cors()); // Enable CORS for all routes
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true, // Allow credentials (cookies)
+})); // Enable CORS for all routes
 app.use(express.json());
+app.use(cookieParser());
 
 // Swagger setup
 setupSwagger(app);
