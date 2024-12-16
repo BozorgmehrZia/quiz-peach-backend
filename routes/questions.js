@@ -333,15 +333,15 @@ router.get('/:id/details', authenticateUser, async (req, res) => {
         const { id } = req.params;
 
         // Find the question by ID
-        const question = await Question.findByPk(id);
+        const question = await Question.findByPk(id, {
+            include: [{ model: Tag }] // Assume Tag has been defined in your relationships
+        });
+        consoler.log(question.dataValues)
 
         // If the question doesn't exist, return 404
         if (!question) {
             return res.status(404).json({ error: 'Question not found.' });
         }
-        const tag = await Tag.findByPk(question.tag_id);
-        question.dataValues.tag = tag;
-
         // Return the question details
         res.status(200).json(question);
     } catch (error) {

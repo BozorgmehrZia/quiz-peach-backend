@@ -70,4 +70,12 @@ const Question = sequelize.define('Question', {
     timestamps: false,
 });
 
+Question.associate = (models) => {
+    // A question belongs to a tag
+    Question.belongsTo(models.Tag, {
+        foreignKey: 'tag_id', // Foreign key in the Question model
+        as: 'tag', // Optional alias for the relation
+    });
+};
+
 module.exports = Question;

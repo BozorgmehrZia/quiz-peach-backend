@@ -20,4 +20,12 @@ const Tag = sequelize.define('Tag', {
     timestamps: false,
 });
 
+Tag.associate = (models) => {
+    // A tag can have many questions
+    Tag.hasMany(models.Question, {
+        foreignKey: 'tag_id', // Foreign key in the Question model
+        as: 'questions', // Optional alias for the relation
+    });
+};
+
 module.exports = Tag;
