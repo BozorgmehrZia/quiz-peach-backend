@@ -437,17 +437,19 @@ router.get('/', authenticateUser, async (req, res) => {
         // Fetch the questions with the applied filters, including join with AnsweredQuestionUser to check the answered status
         const questions = await Question.findAll({
             where: filters,
-            include: {
+            include: [{
                 model: AnsweredQuestionUser,
                 required: false, // Make it a left join (to include questions even if the user hasn't answered)
             },
+            { model: Tag }
+            ],
         });
 
         // Return the filtered questions with only the selected fields
         const formattedQuestions = questions.map(question => ({
             name: question.name,
             level: question.level,
-            tag: question.tag,  // Assuming tag is a field in the Question model
+            tag: question.Tag.name,  // Assuming tag is a field in the Question model
         }));
 
         res.status(200).json(formattedQuestions);
