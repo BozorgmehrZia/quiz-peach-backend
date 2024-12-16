@@ -10,6 +10,13 @@ const SQLiteStore = require('connect-sqlite3')(session);
 const app = express();
 const port = process.env.PORT || 9090;
 
+const fs = require('fs')
+
+const outputLog = fs.createWriteStream('./outputLog.log');
+const errorsLog = fs.createWriteStream('./errorsLog.log');
+
+consoler = new console.Console(outputLog, errorsLog);
+
 // Middleware to enable CORS
 app.use(cors({
     origin: 'http://localhost:3000',
