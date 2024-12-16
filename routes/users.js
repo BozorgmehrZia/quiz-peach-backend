@@ -62,14 +62,12 @@ router.get('/', authenticateUser, async (req, res) => {
         const { name } = req.query;
         sortOrder = 'DESC'
         const currentUserId = req.userId;
-        debugger;
 
         // Fetch the current user
         const currentUser = await User.findByPk(currentUserId);
         if (!currentUser) {
             return res.status(400).json({ error: 'Current user not found.' });
         }
-
 
         // Build query filters for other users
         const where = name
@@ -98,7 +96,6 @@ router.get('/', authenticateUser, async (req, res) => {
                 rank = index + 1;
             }
             
-            consoler.log(userWithRank)
             return userWithRank;
         });
 
