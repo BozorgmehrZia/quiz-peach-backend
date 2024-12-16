@@ -334,16 +334,34 @@ router.get('/:id/details', authenticateUser, async (req, res) => {
 
         // Find the question by ID
         const question = await Question.findByPk(id);
-
+        
         // If the question doesn't exist, return 404
         if (!question) {
             return res.status(404).json({ error: 'Question not found.' });
         }
+        const tag = await Tag.findByPk(question.tag_id);
+        question.dataValues.tag = tag;
 
         // Return the question details
         res.status(200).json(question);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch question details.' });
+    }
+});
+
+router.get('/random/details', authenticateUser, async (req, res) => {
+    try {
+        const question = await Question.findOne();
+
+        // If the question doesn't exist, return 404
+        if (!question) {
+            return res.status(404).json({ error: 'There is no question to randomly select.' });
+        }
+
+        // Return the question details
+        res.status(200).json(question);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch random question.' });
     }
 });
 
