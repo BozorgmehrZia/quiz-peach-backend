@@ -1,5 +1,5 @@
 const express = require('express');
-const { Op } = require('sequelize');
+const { Op, where } = require('sequelize');
 const { Question, RelatedQuestion, Tag, AnsweredQuestionUser, User } = require('../models');
 const authenticateUser = require('../middleware');
 
@@ -331,23 +331,33 @@ router.post('/answer', authenticateUser, async (req, res) => {
 router.get('/:id/details', authenticateUser, async (req, res) => {
     try {
         const { id } = req.params;
+        const userId = req.userId
 
         // Find the question by ID
         const question = await Question.findByPk(id, {
-            include: [{ model: Tag }, {
-                model: AnsweredQuestionUser,
-                required: false, // Make it a left join (to include questions even if the user hasn't answered)
-            }
-         ] // Assume Tag has been defined in your relationships
+            include: [{ model: Tag }] // Assume Tag has been defined in your relationships
         });
-        consoler.log(question.dataValues)
 
         // If the question doesn't exist, return 404
         if (!question) {
             return res.status(404).json({ error: 'Question not found.' });
         }
+
+        const answered = await AnsweredQuestionUser.findOne({
+            where: {
+                user_id: userId, // Specify the userId
+                question_id: id, // Assuming 'id' is the questionId you want to check
+            },
+        });
+        
+        
+        const responseData = {
+            ...question.dataValues, // Spread the question properties
+            answered: answered, // Add answered status (true if exists, false otherwise)
+        };
+
         // Return the question details
-        res.status(200).json(question);
+        res.status(200).json(responseData);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch question details.' });
     }
@@ -428,7 +438,7 @@ router.get('/', authenticateUser, async (req, res) => {
 
         // Build the filter criteria
         let filters = {};
-        
+
         if (name) {
             filters.name = {
                 [Op.like]: `%${name}%`, // Partial match for the name
