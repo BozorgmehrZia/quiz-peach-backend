@@ -60,14 +60,16 @@ const router = express.Router();
 router.get('/', authenticateUser, async (req, res) => {
     try {
         const { name } = req.query;
-
+        sortOrder = 'DESC'
         const currentUserId = req.userId;
+        debugger;
 
         // Fetch the current user
         const currentUser = await User.findByPk(currentUserId);
         if (!currentUser) {
             return res.status(400).json({ error: 'Current user not found.' });
         }
+
 
         // Build query filters for other users
         const where = name
@@ -76,7 +78,7 @@ router.get('/', authenticateUser, async (req, res) => {
                   name: { [Op.like]: `%${name}%` }, // Case-insensitive partial match
               }
             : { id: { [Op.ne]: currentUserId } }; // Exclude the current user
-
+        
         // Fetch other users sorted by score
         const otherUsers = await User.findAll({
             where,
@@ -95,7 +97,8 @@ router.get('/', authenticateUser, async (req, res) => {
             if (index > 0 && user.score !== allUsers[index - 1].score) {
                 rank = index + 1;
             }
-
+            
+            consoler.log(userWithRank)
             return userWithRank;
         });
 
