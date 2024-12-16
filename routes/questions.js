@@ -424,10 +424,16 @@ router.get('/:id/details', authenticateUser, async (req, res) => {
  */
 router.get('/', authenticateUser, async (req, res) => {
     try {
-        const { level, answeredStatus } = req.query;
+        const { name, level, answeredStatus } = req.query;
 
         // Build the filter criteria
         let filters = {};
+        
+        if (name) {
+            filters.name = {
+                [Op.like]: `%${name}%`, // Partial match for the name
+            };
+        }
 
         if (level) {
             filters.level = level;  // Filter by level if provided

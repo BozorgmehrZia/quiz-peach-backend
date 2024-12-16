@@ -304,6 +304,12 @@ router.post('/login', async (req, res) => {
             sameSite: 'Lax',
         });
 
+        res.cookie('username', user.name, {
+            httpOnly: false,
+            secure: false,
+            sameSite: 'Lax',
+        });
+
         res.status(200).json({ message: 'Login successful.' });
     } catch (error) {
         console.error(error);
@@ -349,6 +355,11 @@ router.post('/logout', (req, res) => {
         }
         res.clearCookie('userId', {
             httpOnly: true,
+            secure: false,
+            sameSite: 'Lax',
+        });    
+        res.clearCookie('username', {
+            httpOnly: false,
             secure: false,
             sameSite: 'Lax',
         });    
