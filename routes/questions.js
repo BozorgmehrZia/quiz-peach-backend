@@ -201,7 +201,7 @@ router.post('/', authenticateUser, async (req, res) => {
  *         description: Server error.
  */
 router.post('/answer', authenticateUser, async (req, res) => {
-    const { question_id, option } = req.body;
+    let { question_id, option } = req.body;
     const user_id = req.userId;
 
     try {
@@ -209,7 +209,7 @@ router.post('/answer', authenticateUser, async (req, res) => {
         if (!question_id || !option) {
             return res.status(400).json({ error: 'user_id, question_id, and option are required.' });
         }
-
+        option = parseInt(option)
         if (![1, 2, 3, 4].includes(option)) {
             return res.status(400).json({ error: 'Option must be an integer between 1 and 4.' });
         }
@@ -334,7 +334,11 @@ router.get('/:id/details', authenticateUser, async (req, res) => {
 
         // Find the question by ID
         const question = await Question.findByPk(id, {
-            include: [{ model: Tag }] // Assume Tag has been defined in your relationships
+            include: [{ model: Tag }, {
+                model: AnsweredQuestionUser,
+                required: false, // Make it a left join (to include questions even if the user hasn't answered)
+            }
+         ] // Assume Tag has been defined in your relationships
         });
         consoler.log(question.dataValues)
 
