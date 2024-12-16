@@ -447,10 +447,12 @@ router.get('/', authenticateUser, async (req, res) => {
 
         // Return the filtered questions with only the selected fields
         const formattedQuestions = questions.map(question => ({
+            id: question.id,
             name: question.name,
             level: question.level,
             tag: question.Tag.name,  // Assuming tag is a field in the Question model
         }));
+        consoler.log(formattedQuestions)
 
         res.status(200).json(formattedQuestions);
     } catch (error) {
