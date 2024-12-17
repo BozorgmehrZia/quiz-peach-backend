@@ -349,7 +349,7 @@ router.get('/:id/details', authenticateUser, async (req, res) => {
                 question_id: id, // Assuming 'id' is the questionId you want to check
             },
         });
-        
+
         
         const responseData = {
             ...question.dataValues, // Spread the question properties
@@ -360,6 +360,67 @@ router.get('/:id/details', authenticateUser, async (req, res) => {
         res.status(200).json(responseData);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch question details.' });
+    }
+});
+
+/**
+ * @swagger
+ * /api/question/{id}/similar:
+ *   get:
+ *     summary: Fetch questions by the same owner as a specific question
+ *     description: Returns all questions created by the owner of the question specified by its ID in the URL.
+ *     tags:
+ *       - Questions
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID of the question.
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: A list of questions by the same owner.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                     example: "Sample Question"
+ *                   tag:
+ *                     type: string
+ *                     example: "Sports"
+ *       404:
+ *         description: Question not found.
+ *       500:
+ *         description: Internal server error.
+ */
+router.get('/:id/similars', authenticateUser, async (req, res) => {
+    try {
+        const { id } = req.params; // ID of the reference question
+
+        // Step 1: Find the question by ID to get its owner
+        const referenceQuestion = await Question.findByPk(id);
+        if (!referenceQuestion) {
+            return res.status(404).json({ message: 'Question not found' });
+        }
+
+        const ownerId = referenceQuestion.creator_id;
+
+        // Step 2: Find all questions by the same owner
+        const questions = await Question.findAll({
+            where: { creator_id: ownerId },
+            include: [{ model: Tag }]
+        });
+
+        return res.status(200).json(questions);
+    } catch (error) {
+        console.error('Error fetching questions by owner:', error);
+        return res.status(500).json({ message: 'Internal server error' });
     }
 });
 
